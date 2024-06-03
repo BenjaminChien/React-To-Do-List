@@ -3,7 +3,10 @@ import React, {useState, useEffect} from 'react'
 function TodoList(){
   const [tasks, setTasks] = useState(null)
   const [inputValue, setInputValue] = useState('');
+  const [editIndex, setEditIndex] = useState(null);
+  const [editValue, setEditValue] = useState('');
 
+  //save to localStorage
   useEffect(()=>{
     const storedTasks = JSON.parse(localStorage.getItem('tasks'));
     if(storedTasks){
@@ -21,12 +24,29 @@ function TodoList(){
     setInputValue(e.target.value);
   }
 
+  const handleEditChange = (e) => {
+    setEditValue(e.target.value);
+  }
+
   const handleAddTask = (e) => {
     e.preventDefault();
     if(inputValue.trim()){
       setTasks([...tasks, {text: inputValue, completed: false}])
       setInputValue('');
     }
+  }
+
+  const handleEditTask = (index) =>{
+    setEditIndex(index);
+    setEditValue(tasks[index].text)
+  }
+
+  const handleSaveEdit = (index) => {
+    const newTasks = [...tasks];
+    newTasks[index].text = editValue;
+    setTasks(newTasks);
+    setEditIndex(null);
+    setEditValue('');
   }
 
   const toggleTaskCompletion = (index) =>{
@@ -60,10 +80,18 @@ function TodoList(){
             <li 
               key={index}
               style={{textDecoration: task.completed ? 'line-through' : 'none', }}>
-              <span onClick={() => toggleTaskCompletion(index)}>
-                {task.text}
-              </span>
-              <button onClick={() => handleRemoveTask(index)}>Remove</button>
+              {editIndex === index ? (
+                <>
+                  <input type='text' value={editValue} onChange={handleEditChange}/>
+                  <button onClick={() => handleSaveEdit(index)}> Save </button>
+                </>
+              ):(
+                <>
+                  <span onClick={() => toggleTaskCompletion(index)}> {task.text} </span>
+                  <button onClick={() => handleEditTask(index)}> Edit </button>
+                  <button onClick={() => handleRemoveTask(index)}> Remove </button>
+                </>
+              )}
             </li>
           ))
         )}
