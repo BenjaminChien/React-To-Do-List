@@ -1,7 +1,8 @@
 import React, {useState, useEffect} from 'react'
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 function TodoList(){
-  const [tasks, setTasks] = useState(null)
+  const [tasks, setTasks] = useState([])
   const [inputValue, setInputValue] = useState('');
   const [editIndex, setEditIndex] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -60,6 +61,14 @@ function TodoList(){
     setTasks(newTasks);
   }
 
+  const handleDragEnd = (result) =>{
+    if(!result.destination) return;
+    const newTasks = [...tasks];
+    const [reorderedItem] = newTasks.splice(result.source.index, 1);
+    newTasks.splice(result.destination.index, 0, reorderedItem);
+    setTasks(newTasks);
+  }
+
   return(
     <div>
       <h4>Tasks</h4>
@@ -72,30 +81,52 @@ function TodoList(){
         />
         <button type='submit'>Add Task</button>
       </form>
-      <ul>
-        {tasks === null ? (
-          <li>No tasks yet</li>
-        ):(
-          tasks.map((task, index) => (
-            <li 
-              key={index}
-              style={{textDecoration: task.completed ? 'line-through' : 'none', }}>
-              {editIndex === index ? (
-                <>
-                  <input type='text' value={editValue} onChange={handleEditChange}/>
-                  <button onClick={() => handleSaveEdit(index)}> Save </button>
-                </>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="drop-Id">
+          {(provided) =>(
+            <ul ref={provided.innerRef} {...provided.droppableProps} >
+              {tasks.length === 0 ? (
+                <li>No tasks yet</li>
               ):(
-                <>
-                  <span onClick={() => toggleTaskCompletion(index)}> {task.text} </span>
-                  <button onClick={() => handleEditTask(index)}> Edit </button>
-                  <button onClick={() => handleRemoveTask(index)}> Remove </button>
-                </>
+                tasks.map((task, index) => (
+                  <Draggable key={index} draggableId={`task-${index}`} index={index}>
+                    {(provided) => (
+                      <li 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={{
+                          ...provided.draggableProps.style,
+                          textDecoration: task.completed ? 'line-through' : 'none',
+                          marginBottom:'8px',
+                          padding:'8px',
+                          backgroundColor: '#f4f4f4',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        {editIndex === index ? (
+                          <>
+                            <input type='text' value={editValue} onChange={handleEditChange}/>
+                            <button onClick={() => handleSaveEdit(index)}> Save </button>
+                          </>
+                        ):(
+                          <>
+                            <span> {task.text} </span>
+                            <input onClick={() => toggleTaskCompletion(index)} type='checkbox'/>
+                            <button onClick={() => handleEditTask(index)}> Edit </button>
+                            <button onClick={() => handleRemoveTask(index)}> Remove </button>
+                          </>
+                        )}
+                      </li>
+                    )}
+                  </Draggable>
+                ))
               )}
-            </li>
-          ))
-        )}
-      </ul>
+            </ul>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   )
 }
